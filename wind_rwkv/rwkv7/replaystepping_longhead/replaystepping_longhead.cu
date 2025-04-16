@@ -103,9 +103,8 @@ __global__ void backward_kernel(int T, int H, F_ w_, F_ q_, F_ k_, F_ v_, F_ a_,
     __shared__ float w[C], q[C], k[C], a[C], b[C], v[K], dy[K], sa[K], dSb_shared[K], share[C];
     float qi, wi, ki, ai, bi;
 
-    __shared__ float intraStates[_CHUNK_LEN_*K];
+    float intraStates[_CHUNK_LEN_*K];
 
-    // move backward inter-chunk
     for (int t = T-1; t >= 0; t--) {
         int ind = bb*T*H*C + t*H*C + hh * C + i;
         __syncthreads();
@@ -123,9 +122,10 @@ __global__ void backward_kernel(int T, int H, F_ w_, F_ q_, F_ k_, F_ v_, F_ a_,
         }
         __syncthreads();
 
+        int tc = t/_CHUNK_LEN_*_CHUNK_LEN_;
+
         // compute all intra-chunk states via intra-chunk forward loop (similar to activation checkpointing)
         if ((t+1)%_CHUNK_LEN_ == 0) {
-            int tc = t/_CHUNK_LEN_*_CHUNK_LEN_;
             int base = (bb*H+hh)*(T/_CHUNK_LEN_)*C*C + (t/_CHUNK_LEN_)*C*C + i*C + basei;
 #pragma unroll
             for (int j = 0; j < K; j++) {
@@ -143,7 +143,7 @@ __global__ void backward_kernel(int T, int H, F_ w_, F_ q_, F_ k_, F_ v_, F_ a_,
             }
         }
 
-        float* stateT = intraStates + (t-t/_CHUNK_LEN_*_CHUNK_LEN_)*K;
+        float* stateT = intraStates + (t-tc)*K;
         float dq = 0, iwi = 1.f/wi, dw = 0, dk = 0, db = 0;
 #pragma unroll
         for (int j = 0; j < K; j++) {
