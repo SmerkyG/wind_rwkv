@@ -118,7 +118,6 @@ __global__ void backward_kernel(int T, int H, F_ w_, F_ q_, F_ k_, F_ v_, F_ a_,
                 float wi_fac = -__expf(to_float(w_[ind]));
                 wi = __expf(wi_fac);
                 ki = to_float(k_[ind]);
-                ai = to_float(a_[ind]);
                 bi = to_float(b_[ind]);
                 //int vind = bb*T*H*C + (tc+dt)*H*C + hh * C + basei + rowi;
                 if (i < K) {
