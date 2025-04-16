@@ -113,13 +113,13 @@ __global__ void backward_kernel(int T, int H, F_ w_, F_ q_, F_ k_, F_ v_, F_ a_,
             int chunk_starting_state_base = (bb*H+hh)*(T/_CHUNK_LEN_)*C*C + (t/_CHUNK_LEN_)*C*C + i*C + basei;
 #pragma unroll
             for (int dt = 0; dt < _CHUNK_LEN_-1; dt++) {
+                int t_fwd = tc + dt;
                 __syncthreads();
-                int ind = bb*T*H*C + (tc+dt)*H*C + hh * C + i;
+                int ind = bb*T*H*C + t_fwd*H*C + hh * C + i;
                 float wi_fac = -__expf(to_float(w_[ind]));
                 wi = __expf(wi_fac);
                 ki = to_float(k_[ind]);
                 bi = to_float(b_[ind]);
-                //int vind = bb*T*H*C + (tc+dt)*H*C + hh * C + basei + rowi;
                 if (i < K) {
                     int vind = ind + basei;
                     v[i] = to_float(v_[vind]);
@@ -131,8 +131,8 @@ __global__ void backward_kernel(int T, int H, F_ w_, F_ q_, F_ k_, F_ v_, F_ a_,
             
                     int current = dt*K;
                     int next = (dt+1)*K;
-                    int vind = bb*T*H*C + (tc+dt-1)*H*C + hh * C + basei + rowi;
-                    intraStates[next+j] = intraStates[current+j]*wi+ki*v[j]+bi*sa_[vind];
+                    int vind = bb*T*H*C + t_fwd*H*C + hh * C + basei + rowi;
+                    intraStates[next+j] = intraStates[current+j]*wi+ki*v[j]+bi*sa[j];
                 }
             }
         }
