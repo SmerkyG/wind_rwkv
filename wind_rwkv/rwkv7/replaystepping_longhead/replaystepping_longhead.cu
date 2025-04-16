@@ -133,12 +133,8 @@ __global__ void backward_kernel(int T, int H, F_ w_, F_ q_, F_ k_, F_ v_, F_ a_,
                 for (int dt = 1; dt < _CHUNK_LEN_; dt++) {
                     int prev = (dt-1)*K;
                     int current = dt*K;
-                    int vind = bb*T*H*C + (tc+dt)*H*C + hh * C + i + basei;
-                    float sa_temp = 0;
-                    if (i < K) {
-                        sa_temp = sa_[vind];
-                    }
-                    intraStates[current+j] = intraStates[prev+j]*wi+ki*v[j]+bi*sa_temp;
+                    int vind = bb*T*H*C + (tc+dt)*H*C + hh * C + basei + rowi;
+                    intraStates[current+j] = intraStates[prev+j]*wi+ki*v[j]+bi*sa_[vind];
                 }
             }
         }
